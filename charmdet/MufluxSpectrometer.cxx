@@ -271,6 +271,8 @@ void MufluxSpectrometer::ConstructGeometry()
   
   gGeoManager->SetTopVisible();
 
+  Double_t goliathcentre_to_beam = 178.6; //mm
+
   //epsilon to avoid overlapping volumes
   Double_t eps=0.05;
   Double_t epsS=0.00001;
@@ -337,7 +339,7 @@ void MufluxSpectrometer::ConstructGeometry()
     z[0] = (2.*DimZ + fdiststereo+ fDeltaz_view)/2; //37 mm between center of scint and outer tube layer center; 5cm from absorber to scint center
     z[1] = z[0] + fdistT1T2 + 2.*DimZ + fdiststereo;   
     //z[2] = 2*z[0]+ fdistT1T2+4.5*m  + DimZ ; //z[3] distance  till end of T3    
-    z[2] = z[1]+4.5*m  + 3*DimZ/2+fdiststereo+5.*cm ; //z[3] distance  till end of T3 + 5cm
+    z[2] = z[1]+ TransversalSize  + 3*DimZ/2+fdiststereo+5.*cm ; //z[3] distance  till end of T3 + 5cm
     //z[3] = z[2]+ fdistT3T4+ DimZ + 5.8*cm;     
     z[3] = z[2]+ fdistT3T4+ DimZ + 12.6*cm; 
     	    
@@ -533,9 +535,15 @@ t5.SetTranslation(-(ftr12ydim/2+eps-1.*cm)*cos(angle),(ftr12ydim/2+eps+plate_thi
     
     TGeoBBox *BoxGoliath = new TGeoBBox(TransversalSize/2,Height/2,LongitudinalSize/2);
     TGeoVolume *volGoliath = new TGeoVolume("volGoliath",BoxGoliath,air);
-     
+    TGeoRotation ry90;	
+    TGeoTranslation gtrans;
+    ry90.SetAngles(90,90,90); 
     //From latest (2017) field measurements: beam coordinates x=-1.4mm, y=-178.6mm, hence need to move Goliath up
-    top->AddNode(volGoliath,1,new TGeoTranslation(1.4*mm,178.6*mm,z[1] + (2.*DimZ + fdiststereo)/2+  LongitudinalSize/2 - fOuter_Tube_diameter/2 + 7.9*cm)); 
+    gtrans.SetTranslation(1.4*mm,goliathcentre_to_beam*mm,z[1] + (2.*DimZ + fdiststereo)/2+  TransversalSize/2 - fOuter_Tube_diameter/2 + 7.9*cm);
+    TGeoCombiTrans cg(gtrans,ry90);
+    TGeoHMatrix *mcg = new TGeoHMatrix(cg);
+
+    top->AddNode(volGoliath,1,mcg); 
     //volvacuum in centre of Goliath
     volGoliath->AddNode(volVacuum, 1, new TGeoTranslation(0,0,0));
 
@@ -783,11 +791,11 @@ t5.SetTranslation(-(ftr12ydim/2+eps-1.*cm)*cos(angle),(ftr12ydim/2+eps+plate_thi
         //TGeoBBox *platebox_34 = new TGeoBBox("platebox_34", ftr34xdim/2.+1.+2*fTubes_pitch,  plate_thickness/2. , fDeltaz_view/2.);
         TGeoBBox *platebox_34 = new TGeoBBox("platebox_34", ftr34xdim/2.+fTubes_pitch/2.,  plate_thickness/2. , fDeltaz_view/2.);   
 	 
-        TGeoBBox *DriftTube3 = new TGeoBBox("DriftTube3", DimX/2 + 1*m/2 , DimY/2 + 1*m/2, DimZ/2+eps); 
+        TGeoBBox *DriftTube3 = new TGeoBBox("DriftTube3", DimX/2 + 1*m/2 , DimY/2 + 0.68*m/2, DimZ/2+eps); 
         TGeoVolume *volDriftTube3 = new TGeoVolume("volDriftTube3",DriftTube3,air);
         volDriftTube3->SetLineColor(kBlue-5);
 
-        TGeoBBox *DriftTube4 = new TGeoBBox("DriftTube4", DimX/2 + 1*m/2, DimY/2 + 1*m/2 , DimZ/2+eps); 
+        TGeoBBox *DriftTube4 = new TGeoBBox("DriftTube4", DimX/2 + 1*m/2, DimY/2 + 0.68*m/2 , DimZ/2+eps); 
         TGeoVolume *volDriftTube4 = new TGeoVolume("volDriftTube4",DriftTube4,air);
         volDriftTube4->SetLineColor(kBlue-5);
         Int_t vnb=0;
@@ -797,7 +805,8 @@ t5.SetTranslation(-(ftr12ydim/2+eps-1.*cm)*cos(angle),(ftr12ydim/2+eps+plate_thi
         if (statnb==3) {
           volDriftTube3->SetVisibility(kFALSE);
 	  //top->AddNode(volDriftTube3,3,new TGeoTranslation(0,0,4.5*m +89*cm + 2.5 * DimZ + 3.*cm));//with SA and SB
-	  top->AddNode(volDriftTube3,3,new TGeoTranslation(0,0,z[2]));
+	  //move drifttubes up so they cover the Goliath aperture, not centered on the beam
+	  top->AddNode(volDriftTube3,3,new TGeoTranslation(0,goliathcentre_to_beam*mm,z[2]));
           nmview_34 = "Station_3_x";
 	  nmview_top_34="Station_3_top_x";
 	  nmview_bot_34="Station_3_bot_x";	 
@@ -807,7 +816,8 @@ t5.SetTranslation(-(ftr12ydim/2+eps-1.*cm)*cos(angle),(ftr12ydim/2+eps+plate_thi
           volDriftTube4->SetVisibility(kFALSE);     
 	  //top->AddNode(volDriftTube4,4,new TGeoTranslation(0,0,4.5*m +286*cm + 2.5 * DimZ + 3.*cm)); //with SA and SB
 	  //top->AddNode(volDriftTube4,4,new TGeoTranslation(0,0,z[3]-(DimZ+5.8)));
-	  top->AddNode(volDriftTube4,4,new TGeoTranslation(0,0,z[3]-(DimZ+11.6)));
+	  //move drifttubes up so they cover the Goliath aperture, not centered on the beam
+	  top->AddNode(volDriftTube4,4,new TGeoTranslation(0,goliathcentre_to_beam*mm,z[3]-(DimZ+11.6)));
           nmview_34 = "Station_4_x";
 	  nmview_top_34="Station_4_top_x";
 	  nmview_bot_34="Station_4_bot_x";		  	  	  

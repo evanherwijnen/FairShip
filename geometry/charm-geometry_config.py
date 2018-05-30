@@ -207,7 +207,7 @@ with ConfigRegistry.register_config("basic") as c:
     
     if c.MufluxSpectrometer.muflux == True:
        #for the muflux measurement the muontagger has to be moved back
-       c.MuonTagger.zBox = c.Spectrometer.SZ+ c.MuonTagger.BZ*3./2. + c.Box.PZ + 5*u.cm -230*u.cm
+       c.MuonTagger.zBox = c.Spectrometer.SZ+ c.MuonTagger.BZ*3./2. + c.Box.PZ + 5*u.cm -310*u.cm
     else:    
        c.MuonTagger.zBox = c.Spectrometer.SZ+ c.MuonTagger.BZ/2 + c.Box.PZ + 5*u.cm
 

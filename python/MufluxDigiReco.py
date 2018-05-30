@@ -583,7 +583,7 @@ class MufluxDigiReco:
   print 'finished writing tree'
   self.sTree.Write()
   ut.errorSummary()
-  ut.writeHists(h,"recohists-pgun.root")
+  ut.writeHists(h,"recohists.root")
   if realPR: ut.writeHists(shipPatRec.h,"recohists_patrec.root")
 
 
